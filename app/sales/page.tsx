@@ -54,6 +54,7 @@ export default function SalesPage() {
   const [customerSearch, setCustomerSearch] = useState('');
   const [customerResults, setCustomerResults] = useState<Customer[]>([]);
   const [showCustomerPicker, setShowCustomerPicker] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [depositCount, setDepositCount] = useState(0);
   const [refundCount, setRefundCount] = useState(0);
   const [notes, setNotes] = useState('');
@@ -115,10 +116,9 @@ export default function SalesPage() {
     setCustomerResults(data || []);
   }
 
-  const selectedCustomer = customerResults.find((c) => c.id === customerId);
-
   function pickCustomer(c: Customer) {
     setCustomerId(c.id);
+    setSelectedCustomer(c);
     setCustomerSearch(c.name);
     setCustomerResults([]);
     setShowCustomerPicker(false);
@@ -126,6 +126,7 @@ export default function SalesPage() {
 
   function clearCustomer() {
     setCustomerId(null);
+    setSelectedCustomer(null);
     setCustomerSearch('');
     setCustomerResults([]);
   }
@@ -186,21 +187,27 @@ export default function SalesPage() {
     const { error: itemErr } = await supabase.from('sale_items').insert(itemRows);
 
     if (itemErr) {
-      toast.show('Items failed: ' + itemErr.message, 'error');
+      // Compensating delete — avoid orphaned sale row with no items
+      await supabase.from('sales').delete().eq('id', sale.id);
+      toast.show('Items failed — sale rolled back: ' + itemErr.message, 'error');
       setSaving(false);
       return;
     }
 
-    // Update customer container count if a customer was selected
     if (customerId && (depositCount > 0 || refundCount > 0)) {
       const net = depositCount - refundCount;
-      const cust = customerResults.find((c) => c.id === customerId);
-      if (cust) {
+      // Fetch fresh values to avoid stale-read races with concurrent family edits
+      const { data: fresh } = await supabase
+        .from('customers')
+        .select('containers_out, deposit_paid')
+        .eq('id', customerId)
+        .single();
+      if (fresh) {
         await supabase
           .from('customers')
           .update({
-            containers_out: Math.max(0, cust.containers_out + net),
-            deposit_paid: Math.max(0, Number(cust.deposit_paid || 0) + deposit - refund),
+            containers_out: Math.max(0, fresh.containers_out + net),
+            deposit_paid: Math.max(0, Number(fresh.deposit_paid || 0) + deposit - refund),
           })
           .eq('id', customerId);
       }
