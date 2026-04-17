@@ -69,15 +69,17 @@ export default function ReportsPage() {
 
   async function exportCSV() {
     const supabase = createClient();
-    const start = `${month}-01`;
     const [y, m] = month.split('-').map(Number);
-    const nextMonth = new Date(y, m, 1).toISOString();
+    // Manila = UTC+8. Compute month bounds as UTC equivalents of Manila midnight
+    const phOffsetMs = 8 * 60 * 60 * 1000;
+    const startUTC = new Date(Date.UTC(y, m - 1, 1) - phOffsetMs).toISOString();
+    const endUTC = new Date(Date.UTC(y, m, 1) - phOffsetMs).toISOString();
 
     const { data: sales } = await supabase
       .from('sales')
       .select('*, customers(name), sale_items(gallon_type, quantity, unit_price, line_total)')
-      .gte('created_at', start)
-      .lt('created_at', nextMonth)
+      .gte('created_at', startUTC)
+      .lt('created_at', endUTC)
       .order('created_at', { ascending: true });
 
     if (!sales || sales.length === 0) {

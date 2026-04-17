@@ -30,13 +30,18 @@ function peso(n: number) {
   return '₱' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+function manilaDateToday() {
+  // Asia/Manila is UTC+8, no DST
+  return new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
 export default function ExpensesPage() {
   const toast = useToast();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(manilaDateToday());
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -88,8 +93,8 @@ export default function ExpensesPage() {
     else { toast.show('Deleted'); load(); }
   }
 
-  // Monthly total
-  const thisMonth = new Date().toISOString().slice(0, 7);
+  // Monthly total (Manila month)
+  const thisMonth = manilaDateToday().slice(0, 7);
   const monthTotal = expenses
     .filter((e) => e.expense_date.startsWith(thisMonth))
     .reduce((s, e) => s + Number(e.amount), 0);
