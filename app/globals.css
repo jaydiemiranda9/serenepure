@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ink: #0a1628;
+  --paper: #f7f9fc;
+  --water: #1e6091;
+  --water-light: #4a9ec7;
+  --water-mist: #cfe4f0;
+  --drop: #2ba5d4;
+}
+
+html, body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Fraunces', Georgia, serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+body {
+  background-image:
+    radial-gradient(at 0% 0%, rgba(74, 158, 199, 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(207, 228, 240, 0.3) 0px, transparent 50%);
+  background-attachment: fixed;
+}
+
+/* Ripple animation for drop logo */
+@keyframes ripple {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes drip {
+  0% { transform: translateY(-100%); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: translateY(200%); opacity: 0; }
+}
+
+.fade-up { animation: fadeUp 0.4s ease backwards; }
+
+/* Number input spinner hide */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] { -moz-appearance: textfield; }
+
+/* Better tap targets on mobile */
+button, a, input, select { touch-action: manipulation; }
